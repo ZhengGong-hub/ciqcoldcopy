@@ -1,3 +1,4 @@
 *.json
 cfg/
 __pycache__
+data/
