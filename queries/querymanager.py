@@ -13,7 +13,7 @@ def read_sql_to_df(sql):
     Returns:
         pd.DataFrame: contains result for executed sql 
     """
-    connect_info = json.load(open('cfg/cn_copy.json', 'r'))
+    connect_info = json.load(open('../cfg/cn_copy.json', 'r'))
     connection = get_connection(connect_info)
     cursor = connection.cursor()
 
@@ -93,12 +93,13 @@ def estimatesQ(ls_ids, dataitemids, datestart):
     """
     return read_sql_to_df(sql)
 
+
 def get_transcript(ls_ids, startdatestr, enddatestr):
     sql = f"""
     CREATE TEMP TABLE t_transcriptId AS
         SELECT DISTINCT a.transcriptId FROM targetskma.ciqTranscript a, (
             SELECT keyDevId, Min(transcriptCreationDateUTC) AS minTm FROM targetskma.ciqTranscript
-                WHERE transcriptCollectionTypeId!=7 GROUP BY keyDevId) mtm
+                WHERE transcriptCollectionTypeId!=7 GROUP BY keyDevId) mtm -- typeid 7 is spellchecked copy, it is often times better to have a edited copy, although slower
         WHERE a.keyDevId = mtm.keyDevId AND a.transcriptCreationDateUTC = mtm.minTm
         ORDER BY transcriptId;
     CREATE INDEX t_idx ON t_transcriptId (transcriptId);
@@ -106,7 +107,7 @@ def get_transcript(ls_ids, startdatestr, enddatestr):
     CREATE TEMP TABLE t_ete AS
         SELECT  t.transcriptId,
                 t.transcriptCreationDateUTC,
-                t.transcriptCollectionTypeId,
+                -- t.transcriptCollectionTypeId,
                 t.keyDevId,
                 ete.objectId AS companyId
         FROM targetskma.ciqTranscript                   t
@@ -125,34 +126,35 @@ def get_transcript(ls_ids, startdatestr, enddatestr):
     CREATE TEMP TABLE t_ete_ebdr AS
         SELECT  t.transcriptId,
                 t.transcriptCreationDateUTC,
-                t.transcriptCollectionTypeId,
+                -- t.transcriptCollectionTypeId,
                 t.keyDevId,
                 t.companyId,
-                e.mostImportantDateUTC as EarningsDateUTC,
-                e.announcedDateUTC,
+                e.mostImportantDateUTC as EarningsCalldateUTC,
+                e.announcedDateUTC as EarningsCallAnnoucementdateUTC,
                 eb.fiscalyear,
-                eb.fiscalquarter,
-                dr.delayReasonTypeId
+                eb.fiscalquarter
+                -- dr.delayReasonTypeId
         FROM t_ete                                    t
         JOIN targetskma.ciqEvent                      e  ON  e.keyDevId = t.keyDevId
         JOIN targetskma.ciqeventcallbasicinfo         eb ON eb.keyDevId = t.keyDevId
-        LEFT JOIN targetskma.ciqTranscriptDelayReason dr ON dr.keyDevId = t.keyDevId;
+        -- LEFT JOIN targetskma.ciqTranscriptDelayReason dr ON dr.keyDevId = t.keyDevId
+        ;
     DROP TABLE t_ete;
     CREATE INDEX t_idx ON t_ete_ebdr (transcriptId);
 
     CREATE TEMP TABLE t_ete_ebdr_tc AS
         SELECT  t.transcriptId,
                 t.transcriptCreationDateUTC,
-                t.transcriptCollectionTypeId,
+                -- t.transcriptCollectionTypeId,
                 t.keyDevId,
                 t.companyId,
-                t.EarningsDateUTC,
-                t.announcedDateUTC,
+                t.EarningsCalldateUTC,
+                t.EarningsCallAnnoucementdateUTC,
                 t.fiscalyear,
                 t.fiscalquarter,
-                t.delayReasonTypeId,
+                -- t.delayReasonTypeId,
                 CAST(tc.componentText AS TEXT) AS componenttext,
-                tc.transcriptComponentId,
+                -- tc.transcriptComponentId,
                 tc.componentOrder,
                 tc.transcriptComponentTypeId,
       	        tc.transcriptpersonid    --no need select
@@ -165,16 +167,16 @@ def get_transcript(ls_ids, startdatestr, enddatestr):
     CREATE TEMP TABLE t_ete_ebdr_tctyp AS
         SELECT  t.transcriptId,
                 t.transcriptCreationDateUTC,
-                t.transcriptCollectionTypeId,
+                -- t.transcriptCollectionTypeId,
                 t.keyDevId,
                 t.companyId,
-                t.EarningsDateUTC,
-                t.announcedDateUTC,
+                t.EarningsCalldateUTC,
+                t.EarningsCallAnnoucementdateUTC,
                 t.fiscalyear,
                 t.fiscalquarter,
-                t.delayReasonTypeId,
+                -- t.delayReasonTypeId,
                 t.componenttext,
-                t.transcriptComponentId,
+                -- t.transcriptComponentId,
                 t.componentOrder,
                 t.transcriptComponentTypeId,
       	        t.transcriptpersonid,    --no need select
@@ -188,25 +190,47 @@ def get_transcript(ls_ids, startdatestr, enddatestr):
 
     SELECT  t.transcriptId,
             t.transcriptCreationDateUTC,
-            t.transcriptCollectionTypeId,
+            -- t.transcriptCollectionTypeId,
             t.keyDevId,
             t.companyId,
-            t.EarningsDateUTC,
-            t.announcedDateUTC,
+            t.EarningsCalldateUTC,
+            t.EarningsCallAnnoucementdateUTC,
             t.fiscalyear,
             t.fiscalquarter,
-            t.delayReasonTypeId,
+            -- t.delayReasonTypeId,
             t.componenttext,
-            t.transcriptComponentId,
+            -- t.transcriptComponentId,
             t.componentOrder,
             t.transcriptComponentTypeId,
             t.transcriptComponentTypeName,
+            t.speakerTypeID,
 	        pt.speakerTypeName,
             pb.title,
-            pb.personid,
-            pb.companyid as pOrg
+            pb.personid as SpeakPersonid,
+            concat(PER.firstname, ' ', PER.lastname) as SpeakerName,
+            pb.companyid as speakerCompanyID,
+            CO.companyname as speakerCompanyNAME
     FROM t_ete_ebdr_tctyp                    t
     JOIN targetskma.ciqTranscriptSpeakerType pt ON pt.speakerTypeId = t.speakerTypeId
-    JOIN targetskma.ciqProfessional          pb ON pb.proId= t.proId;
+    JOIN targetskma.ciqProfessional          pb ON pb.proId= t.proId
+    JOIN targetskma.ciqPerson       PER ON PER.personid= pb.personid
+    JOIN targetskma.ciqCompany          CO ON CO.companyid= pb.companyid;
     """
+    return read_sql_to_df(sql)
+
+
+def get_person(person_ids): 
+    sql = f"""
+        select 
+        ciqperson.*,
+        pro.* 
+        from ciqperson 
+        
+        join
+        ciqprofessional pro ON pro.personid = ciqperson.personid
+
+        where 
+        ciqperson.personid IN ({', '.join([str(id) for id in person_ids])})
+        ;
+        """
     return read_sql_to_df(sql)
