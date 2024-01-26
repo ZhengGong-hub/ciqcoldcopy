@@ -13,7 +13,7 @@ def read_sql_to_df(sql):
     Returns:
         pd.DataFrame: contains result for executed sql 
     """
-    connect_info = json.load(open('cfg/aws.json', 'r'))
+    connect_info = json.load(open('cfg/cn_copy.json', 'r'))
     connection = get_connection(connect_info)
     cursor = connection.cursor()
 
