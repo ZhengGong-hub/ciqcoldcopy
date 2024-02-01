@@ -33,3 +33,5 @@ if __name__ == "__main__":
     df = get_person(person_ids = [169600, ])
     df.to_csv('../data/query_person.csv')
     print(df)
+
+    
