@@ -1,5 +1,4 @@
 from capitaliq.cfg import SERVER_TIMEZONE,DBINFO
-from capitaliq.cfg import ADV_THRES, MKTCAP_THRES
 import pandas as pd
 from datetime import datetime, timedelta
 import json
