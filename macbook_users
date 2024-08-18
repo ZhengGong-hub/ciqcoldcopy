@@ -1,5 +1,0 @@
-export PATH='/Users/zhenggong/miniconda/bin:$PATH'
-
-conda init zsh
-
-==> For changes to take effect, close and re-open your current shell. <==
