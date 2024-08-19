@@ -5,7 +5,7 @@ import tqdm
 import math
 import numpy as np
 
-ROOTPATH = '/Users/zhenggong/ciqcoldcopy/' # for importing and reference management 
+ROOTPATH = '/home/ubuntu/ciqcoldcopy/' # for importing and reference management 
 sys.path.append(ROOTPATH)
 
 # internal
@@ -23,6 +23,7 @@ def main():
 
     et_ref = get_all_transcript(df['company_id'].unique())
     et_ref.to_csv(f'data/us_et_ref.csv')
+    
 
 if __name__ == '__main__':
     main()
