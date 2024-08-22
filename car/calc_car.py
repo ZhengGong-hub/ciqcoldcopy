@@ -5,6 +5,7 @@ import sys
 from statsmodels.regression.rolling import RollingOLS
 import tqdm
 import os
+import numpy as np 
 
 ROOTPATH = '/home/ubuntu/ciqcoldcopy/' # for importing and reference management 
 sys.path.append(ROOTPATH)
@@ -93,8 +94,17 @@ def calculate_car(companyid = 32307, addr = 'data/car_data/v1/', start_date = '2
     price = price.query('y_hat != 0') # filter out the first xxx rows
 
 
-    # step 5: map out and save CAR
-    print(price)
+    # step 5: map out and save CAR at different time horizons
+    # print(price)
+    car = price
+    
+    car['compound'] = (1 + car['abnormal_ret']/100)
+    car['one_d_car'] = car['compound'] - 1
+    car['one_w_car'] = car['compound'].rolling(window=5).apply(np.prod, raw=True) - 1
+    car['one_m_car'] = car['compound'].rolling(window=22).apply(np.prod, raw=True) - 1
+    car['one_q_car'] = car['compound'].rolling(window=66).apply(np.prod, raw=True) - 1
+
+    print(car)
     price.to_parquet(addr + f'{companyid}.parquet')
 
     return 0
@@ -118,8 +128,8 @@ if __name__ == "__main__":
     # this step calculate one day car for every company in the universe 
     for companyid in tqdm.tqdm(universe['companyid'].unique()):
         # print(companyid)
-        if not os.path.exists(f'data/car_data/v1/{companyid}.parquet'):
-            calculate_car(companyid, addr='data/car_data/v1/', start_date='2000-01-01', end_date='2030-06-01')
+        if not os.path.exists(f'data/car_data/v2/{companyid}.parquet'):
+            calculate_car(companyid, addr='data/car_data/v2/', start_date='2000-01-01', end_date='2030-06-01')
             print(f'{companyid} is done!')
 
     # this step calculate car but in aggregated manner for every company in the universe
