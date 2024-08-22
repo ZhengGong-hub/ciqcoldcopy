@@ -19,11 +19,10 @@ def calc_et_car(universe):
     res = []
     for _, row in tqdm.tqdm(universe.iterrows()):
         cid = row['companyid']
-        print(row)
 
         ec_et = pd.to_datetime(row['ec_et'])# .tz_localize(None)
         ec_et_day = pd.to_datetime(ec_et.date())
-        print(ec_et)
+        # print(ec_et)
         # print(ec_et_day.year)
 
         car_data_addr = f'data/car_data/v2/{cid}.parquet'
@@ -32,8 +31,7 @@ def calc_et_car(universe):
         else:
             print(f'companyid {cid} does not exist!')
             continue 
-        
-        print(car)
+
 
         # one_d_car, ten_d_car, one_m_car, one_q_car
         
@@ -44,8 +42,10 @@ def calc_et_car(universe):
         else:
             print(f'no such market indicator type! {ec_et}')
             continue
+
+        if len(car) == 0:
+            continue
         car.reset_index(inplace = True, drop = True)
-        # print(car)
 
         one_d_car = car['one_d_car'].iloc[0]
         one_w_car = car['one_w_car'].iloc[0]
@@ -53,8 +53,6 @@ def calc_et_car(universe):
         one_q_car = car['one_q_car'].iloc[0]
 
         res.append([row['transcriptid'], one_d_car, one_w_car, one_m_car , one_q_car])
-        print(res)
-        assert False
 
     df = pd.DataFrame(res, columns = ['transcriptid', 'one_d_car', 'one_w_car', 'one_m_car', 'one_q_car'])
     print(df)
