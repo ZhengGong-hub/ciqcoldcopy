@@ -20,6 +20,7 @@ def calc_et_car(universe):
     for _, row in tqdm.tqdm(universe.iterrows()):
         cid = row['companyid']
         print(row)
+        assert False
         ec_et = pd.to_datetime(row['ec_et'])# .tz_localize(None)
         ec_et_day = pd.to_datetime(row['ec_et_day'])
         print(ec_et)
@@ -80,6 +81,6 @@ def calc_et_car(universe):
 
 if __name__ == "__main__":
 
-    universe = pd.read_csv('/home/ubuntu/ciqcoldcopy/data/us_universe.csv', index_col = [0])
+    universe = pd.read_csv('/home/ubuntu/ciqcoldcopy/data/us_et_ref.csv', index_col = [0])
     calc_et_car(universe=universe)
     

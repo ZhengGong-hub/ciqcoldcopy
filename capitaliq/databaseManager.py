@@ -4257,22 +4257,12 @@ def get_estimates_cur_q_ref_co(ls_ids, dataitemids, asofdate, connection = None)
     
     return read_sql_to_df(sql, connection, cursor)
 
-def get_act_q_ref_co(ls_ids, dataitemids, asofdate, connection = None):
-    datestr = (
-        pd.to_datetime(asofdate)
-            .tz_localize(SERVER_TIMEZONE)
-            .tz_convert("UTC")
-            .strftime("%Y-%m-%d %H:%M:%S")
-    )
-    datestart = ((pd.to_datetime(asofdate) - timedelta(days = 360*5))
-            .tz_localize(SERVER_TIMEZONE)
-            .tz_convert("UTC")
-            .strftime("%Y-%m-%d")
-            )
+def get_act_q_ref_co(ls_ids, dataitemids, startdate, connection = None):
+    datestart = pd.to_datetime(startdate).tz_localize(SERVER_TIMEZONE).tz_convert("UTC").strftime("%Y-%m-%d")
 
     sql = f"""
-        select '{datestr}' as observeDate
-        , EP.*
+        select 
+        EP.*
         , ED.dataitemid
         , ED.currencyId
         , ED.dataItemValue
@@ -4586,7 +4576,7 @@ def get_transcript_ref_earliest_new(ls_ids, startdate, enddate=None, connection 
 
 
 ### new
-def earnings_on_the_date(ls_ids, fys, connection = None):
+def earnings_on_the_date(ls_ids, connection = None):
     sql = f"""
     select et.objectId as CompanyID, e.keyDevId, e.mostImportantDateUTC as EarningsDate, em.marketIndicatorTypeName, e.headline, er.fiscalyear, er.fiscalquarter, er.calendaryear
     from ciqevent e
@@ -4595,7 +4585,6 @@ def earnings_on_the_date(ls_ids, fys, connection = None):
     join ciqEventMarketIndicatorType em on em.marketIndicatorTypeId=er.marketIndicatorTypeId
     where 1=1
     and et.objectId in ({', '.join([str(id) for id in ls_ids])})
-    and er.fiscalyear in ({', '.join([str(fy) for fy in fys])})
     """
 
     if connection is None:
@@ -4635,22 +4624,12 @@ def eventtoevent(keydevids, connection = None):
                 
     return read_sql_to_df(sql, connection, cursor)
 
-def get_epsestimatediff_ref_co(ls_ids, dataitemids, asofdate, connection = None):
-    datestr = (
-        pd.to_datetime(asofdate)
-            .tz_localize(SERVER_TIMEZONE)
-            .tz_convert("UTC")
-            .strftime("%Y-%m-%d %H:%M:%S")
-    )
-    datestart = ((pd.to_datetime(asofdate) - timedelta(days = 360*5))
-            .tz_localize(SERVER_TIMEZONE)
-            .tz_convert("UTC")
-            .strftime("%Y-%m-%d")
-            )
+def get_epsestimatediff_ref_co(ls_ids, dataitemids, startdate, connection = None):
+    datestr = pd.to_datetime(startdate).tz_localize(SERVER_TIMEZONE).tz_convert("UTC").strftime("%Y-%m-%d %H:%M:%S")
 
     sql = f"""
-        select '{datestr}' as observeDate
-        , EP.*
+        select
+        EP.*
         , ED.dataitemid
         , ED.currencyId
         , ED.dataItemValue
@@ -4669,8 +4648,7 @@ def get_epsestimatediff_ref_co(ls_ids, dataitemids, asofdate, connection = None)
         where EP.companyId IN ({', '.join([str(id) for id in ls_ids])})
         and EP.periodTypeId = 2 -- Quarter 
         and ED.dataItemId in ({', '.join([str(id) for id in dataitemids])})
-        and ED.asofdate > '{datestart}'
-        and ED.asofdate <= '{datestr}'
+        and ED.asofdate > '{datestr}'
         order by 4
     """
     if connection is None:
