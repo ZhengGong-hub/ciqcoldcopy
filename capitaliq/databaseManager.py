@@ -4827,3 +4827,17 @@ def get_all_transcript(ls_ids, connection = None):
     df = read_sql_to_df(sql, connection, cursor)  
     et_ref = df.sort_values(['keydevid', 'transcriptcreationdateutc']).drop_duplicates('keydevid', keep='last') # get the max id, that is with latest transcriptcreationdateutc
     return et_ref
+
+
+
+def get_transcript_metadata(ls_tids, connection = None):
+    
+    sql = f"""
+            SELECT *
+            FROM targetskma.ciqTranscript t
+            WHERE t.transcriptid in ({', '.join([str(id) for id in ls_tids])})         
+            """  
+    if connection is None:
+        connection = get_connection(DBINFO)
+    cursor = connection.cursor() 
+    return read_sql_to_df(sql, connection, cursor)  
